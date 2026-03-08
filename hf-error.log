@@ -1,0 +1,5 @@
+{
+  "stack": "InputError: No Inference Provider available for model adityanair807/lexai-legal-3b.\n    at resolveProvider (D:\\LegalEase\\lexai\\node_modules\\@huggingface\\inference\\dist\\commonjs\\lib\\getInferenceProviderMapping.js:130:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async textGeneration (D:\\LegalEase\\lexai\\node_modules\\@huggingface\\inference\\dist\\commonjs\\tasks\\nlp\\textGeneration.js:11:22)",
+  "message": "No Inference Provider available for model adityanair807/lexai-legal-3b.",
+  "name": "InputError"
+}
