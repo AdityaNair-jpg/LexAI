@@ -10,8 +10,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Ensure pdf-parse only runs server-side
-  serverExternalPackages: ["pdf-parse"],
+  // Ensure pdf-parse and pdfjs-dist only run server-side
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist"],
 };
 
 export default nextConfig;

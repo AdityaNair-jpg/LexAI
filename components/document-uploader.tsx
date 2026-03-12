@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useRouter } from "next/navigation";
+import type { Id } from "../convex/_generated/dataModel";
 
 export function DocumentUploader() {
   const [uploading, setUploading] = useState(false);
@@ -13,6 +14,7 @@ export function DocumentUploader() {
   const generateUploadUrl = useMutation(api.documents.generateUploadUrl);
   const createDocument = useMutation(api.documents.create);
   const updateStatus = useMutation(api.documents.updateStatus);
+  const createAnnotations = useMutation(api.annotations.createMany);
 
   const onDrop = useCallback(
     async (files: File[]) => {
@@ -52,10 +54,12 @@ export function DocumentUploader() {
         if (analyzeRes.ok) {
           const { annotations } = await analyzeRes.json();
 
-          // 5. Store annotations (we'll call the Convex mutation directly from server later)
-          // For now, store via API or direct mutation
+          // 5. Store annotations in Convex
           if (annotations && annotations.length > 0) {
-            // Annotations are already stored by the API route
+            await createAnnotations({
+              documentId: docId as Id<"documents">,
+              annotations: annotations,
+            });
           }
 
           // 6. Update status to ready
@@ -86,7 +90,7 @@ export function DocumentUploader() {
         }, 6000);
       }
     },
-    [generateUploadUrl, createDocument, updateStatus, router]
+    [generateUploadUrl, createDocument, updateStatus, router, createAnnotations]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
