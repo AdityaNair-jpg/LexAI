@@ -5,7 +5,6 @@ export const generateUploadUrl = mutation(async (ctx) => {
   return await ctx.storage.generateUploadUrl();
 });
 
-// file storage
 export const create = mutation({
   args: {
     fileName: v.string(),
@@ -63,3 +62,4 @@ export const getById = query({
     return await ctx.db.get(args.id);
   },
 });
+//end of file
