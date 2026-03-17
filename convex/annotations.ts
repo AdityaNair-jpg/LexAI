@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+// Main function
 export const createMany = mutation({
   args: {
     documentId: v.id("documents"),
