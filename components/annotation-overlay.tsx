@@ -15,6 +15,7 @@ type Props = {
   pageWidth: number;
 };
 
+// annotation function
 export function AnnotationOverlay({ annotations, pageWidth }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
