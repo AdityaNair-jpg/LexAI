@@ -16,6 +16,7 @@ export const create = mutation({
 
     const fileUrl = await ctx.storage.getUrl(args.fileStorageId);
 
+    
     const docId = await ctx.db.insert("documents", {
       userId: identity.subject,
       fileName: args.fileName,
