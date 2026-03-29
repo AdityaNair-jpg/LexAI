@@ -16,9 +16,10 @@ const RISK_COLORS: Record<string, string> = {
 type Props = {
   fileUrl: string;
   annotations: Annotation[];
+  onViewSolution?: (annotation: Annotation) => void;
 };
 
-export function PdfCanvasViewer({ fileUrl, annotations }: Props) {
+export function PdfCanvasViewer({ fileUrl, annotations, onViewSolution }: Props) {
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -139,6 +140,7 @@ export function PdfCanvasViewer({ fileUrl, annotations }: Props) {
           {pageAnnotations.map((ann) => (
             <div
               key={ann._id}
+              onClick={() => onViewSolution?.(ann)}
               className={`absolute border-l-4 cursor-pointer pointer-events-auto transition-all duration-150 rounded-sm ${
                 hoveredAnnotation?._id === ann._id
                   ? RISK_COLORS[ann.riskLevel]?.replace("/30", "/50") || ""
@@ -233,14 +235,22 @@ export function PdfCanvasViewer({ fileUrl, annotations }: Props) {
                 {hoveredAnnotation.explanation}
               </p>
             </div>
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2">
-              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">
-                Recommendation
-              </p>
-              <p className="text-xs text-emerald-300">
-                {hoveredAnnotation.recommendation}
-              </p>
-            </div>
+            {hoveredAnnotation.proposedSolution && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 mb-2">
+                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">
+                  ✅ Solution
+                </p>
+                <p className="text-xs text-emerald-300 line-clamp-3">
+                  {hoveredAnnotation.proposedSolution}
+                </p>
+              </div>
+            )}
+            <button
+              onClick={() => onViewSolution?.(hoveredAnnotation)}
+              className="w-full py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 rounded-lg text-xs text-indigo-300 font-medium transition-colors"
+            >
+              View Full Solution →
+            </button>
           </div>
         </div>,
         document.body

@@ -5,6 +5,9 @@ type RawAnnotation = {
   riskLevel: "HIGH" | "MEDIUM" | "LOW";
   explanation: string;
   recommendation: string;
+  category?: string;
+  proposedSolution?: string;
+  replacementClause?: string;
 };
 
 type TextItemInput = {
@@ -30,6 +33,9 @@ export function mapAnnotations(
   riskLevel: "HIGH" | "MEDIUM" | "LOW";
   explanation: string;
   recommendation: string;
+  category?: string;
+  proposedSolution?: string;
+  replacementClause?: string;
   boundingBox: { x: number; y: number; width: number; height: number };
 }> {
   const annotations = [];
@@ -88,6 +94,9 @@ export function mapAnnotations(
       riskLevel: result.riskLevel || "MEDIUM",
       explanation: result.explanation || "",
       recommendation: result.recommendation || "",
+      category: result.category || "Other",
+      proposedSolution: result.proposedSolution || "",
+      replacementClause: result.replacementClause || "",
       boundingBox,
     });
   }
