@@ -1,7 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-// Main function
 export const createMany = mutation({
   args: {
     documentId: v.id("documents"),
@@ -17,6 +16,9 @@ export const createMany = mutation({
         ),
         explanation: v.string(),
         recommendation: v.string(),
+        category: v.optional(v.string()),
+        proposedSolution: v.optional(v.string()),
+        replacementClause: v.optional(v.string()),
         boundingBox: v.object({
           x: v.number(),
           y: v.number(),
