@@ -3,6 +3,9 @@ type HFResponse = {
   riskLevel: "HIGH" | "MEDIUM" | "LOW";
   explanation: string;
   recommendation: string;
+  category: string;
+  proposedSolution: string;
+  replacementClause: string;
   isFlagged: boolean;
 };
 
@@ -13,36 +16,21 @@ async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const CLAUSE_TYPES = [
-  "Indemnification",
-  "Limitation of Liability",
-  "Auto-renewal",
+const CATEGORIES = [
+  "Liability",
   "Termination",
-  "Confidentiality",
-  "Non-disclosure",
-  "Force Majeure",
-  "Governing Law",
-  "Jurisdiction",
-  "Intellectual Property",
-  "Payment Terms",
-  "Warranty",
-  "Disclaimer",
-  "Assignment",
-  "Transfer",
-  "Notice Period",
-  "Dispute Resolution",
-  "Arbitration",
   "Data Privacy",
-  "GDPR",
-  "Liability Cap",
-  "Exclusivity",
-  "Non-compete",
-  "Non-solicitation",
-  "Entire Agreement",
+  "Payment",
+  "Intellectual Property",
+  "Confidentiality",
+  "Dispute Resolution",
+  "Governance",
+  "Indemnification",
+  "Warranty",
+  "Force Majeure",
+  "Assignment",
+  "Notice",
   "Amendment",
-  "Waiver",
-  "Severability",
-  "Counterparts",
   "Other"
 ].join(", ");
 
@@ -73,31 +61,34 @@ export async function analyzeClause(
             messages: [
               {
                 role: "system",
-                content: "You are LexAI, a Senior Corporate Legal Risk Advisor specializing in contract analysis. Analyze each clause carefully for potential risks to the client."
+                content: "You are LexAI, a Senior Corporate Legal Risk Advisor specializing in contract analysis. For each risky clause, you must provide not just identification but actionable PRESCRIPTIVE solutions."
               },
               {
                 role: "user",
-                content: `Analyze the following contract clause for legal risks.
+                content: `Analyze the following contract clause for legal risks and provide PRESCRIPTIVE solutions.
 
-Identify the clause type from this list: ${CLAUSE_TYPES}
+First, identify the clause category from this list: ${CATEGORIES}
 
 Return ONLY a valid JSON object with these exact fields:
 {
-  "riskType": "The specific type from the list above (e.g., Indemnification, Limitation of Liability)",
-  "riskLevel": "HIGH if the clause significantly disadvantages the client, MEDIUM if moderately risky, LOW if minor concern",
+  "riskType": "The specific type (e.g., Indemnification, Limitation of Liability)",
+  "category": "The category from the list above (e.g., Liability, Termination)",
+  "riskLevel": "HIGH if significantly disadvantages client, MEDIUM if moderately risky, LOW if minor concern",
   "explanation": "2-3 sentence explanation of why this clause is risky and what specific language is concerning",
   "recommendation": "1-2 sentence recommendation on how to address this clause",
-  "isFlagged": true if this clause poses any risk (riskLevel HIGH, MEDIUM, or LOW), false only if completely standard and fair
+  "proposedSolution": "A clear, plain-English explanation of how to fix or mitigate this risk. Be specific and actionable.",
+  "replacementClause": "A neutralized, fair legal clause text that achieves the same purpose but protects both parties. If not applicable, use null.",
+  "isFlagged": true if this clause poses any risk, false only if completely standard and fair
 }
 
-Be strict with flagging - err on the side of flagging potentially problematic clauses.
+Be strict with flagging. For every risky clause, provide a concrete proposed solution and, where possible, replacement clause text.
 
 CLAUSE:
 ${clause.slice(0, 2000)}`
               }
             ],
             temperature: 0.2,
-            max_tokens: 600,
+            max_tokens: 800,
             response_format: { type: "json_object" }
           }),
         }
@@ -131,6 +122,18 @@ ${clause.slice(0, 2000)}`
 
       if (!parsed.riskType) {
         parsed.riskType = "Other";
+      }
+
+      if (!parsed.category) {
+        parsed.category = "Other";
+      }
+
+      if (!parsed.proposedSolution) {
+        parsed.proposedSolution = parsed.recommendation || "Review with legal counsel";
+      }
+
+      if (!parsed.replacementClause) {
+        parsed.replacementClause = "";
       }
       
       return parsed;
