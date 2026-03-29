@@ -1,5 +1,6 @@
 import type { Annotation } from "@/types";
 
+//badge
 const RISK_BADGE: Record<string, string> = {
   HIGH: "bg-red-500/20 text-red-300 border border-red-500/30",
   MEDIUM: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
