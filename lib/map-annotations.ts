@@ -38,35 +38,46 @@ export function mapAnnotations(
     const result = results[i];
     if (!result) continue;
 
-    let pageNumber = 1;
-    let boundingBox: { x: number; y: number; width: number; height: number };
+    const totalFlagged = results.filter(r => r !== null).length || 1;
+    const positionIndex = results.slice(0, i).filter(r => r !== null).length;
+    
+    const baseY = 5 + (positionIndex / Math.max(totalFlagged - 1, 1)) * 80;
+    const xOffset = (i % 3) * 3;
+    const clauseLength = clauses[i].length;
+    const heightBasedOnLength = Math.max(4, Math.min(12, clauseLength / 80));
 
-    if (textItems && pageDimensions) {
+    let boundingBox: { x: number; y: number; width: number; height: number };
+    let pageNumber = 1;
+
+    if (textItems && pageDimensions && textItems.length > 0) {
       const match = findBestMatchingTextItem(
         clauses[i],
         textItems as TextItem[],
-        pageDimensions as Map<number, PageDimensions>,
-        pageNumber
+        pageDimensions as Map<number, PageDimensions>
       );
       
       if (match) {
-        boundingBox = match;
-      } else {
-        const estimatedY = (i / clauses.length) * 80 + 5;
         boundingBox = {
-          x: 5,
-          y: estimatedY,
-          width: 90,
-          height: Math.max(4, (clauses[i].length / fullText.length) * 50),
+          x: match.x,
+          y: match.y,
+          width: match.width,
+          height: match.height,
+        };
+        pageNumber = match.pageNumber || 1;
+      } else {
+        boundingBox = {
+          x: 3 + xOffset,
+          y: baseY,
+          width: 94,
+          height: heightBasedOnLength,
         };
       }
     } else {
-      const estimatedY = (i / clauses.length) * 80 + 5;
       boundingBox = {
-        x: 5,
-        y: estimatedY,
-        width: 90,
-        height: Math.max(4, (clauses[i].length / fullText.length) * 50),
+        x: 3 + xOffset,
+        y: baseY,
+        width: 94,
+        height: heightBasedOnLength,
       };
     }
 

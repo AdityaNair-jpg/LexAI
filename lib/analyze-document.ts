@@ -13,6 +13,39 @@ async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const CLAUSE_TYPES = [
+  "Indemnification",
+  "Limitation of Liability",
+  "Auto-renewal",
+  "Termination",
+  "Confidentiality",
+  "Non-disclosure",
+  "Force Majeure",
+  "Governing Law",
+  "Jurisdiction",
+  "Intellectual Property",
+  "Payment Terms",
+  "Warranty",
+  "Disclaimer",
+  "Assignment",
+  "Transfer",
+  "Notice Period",
+  "Dispute Resolution",
+  "Arbitration",
+  "Data Privacy",
+  "GDPR",
+  "Liability Cap",
+  "Exclusivity",
+  "Non-compete",
+  "Non-solicitation",
+  "Entire Agreement",
+  "Amendment",
+  "Waiver",
+  "Severability",
+  "Counterparts",
+  "Other"
+].join(", ");
+
 export async function analyzeClause(
   clause: string
 ): Promise<HFResponse | null> {
@@ -40,29 +73,31 @@ export async function analyzeClause(
             messages: [
               {
                 role: "system",
-                content: "You are LexAI, a Senior Corporate Legal Risk Advisor specializing in contract analysis."
+                content: "You are LexAI, a Senior Corporate Legal Risk Advisor specializing in contract analysis. Analyze each clause carefully for potential risks to the client."
               },
               {
                 role: "user",
                 content: `Analyze the following contract clause for legal risks.
 
-Return ONLY a JSON object with these exact fields (no extra text):
+Identify the clause type from this list: ${CLAUSE_TYPES}
+
+Return ONLY a valid JSON object with these exact fields:
 {
-  "riskType": "Type of risky clause (e.g., Indemnification, Limitation of Liability, Auto-renewal)",
-  "riskLevel": "HIGH, MEDIUM, or LOW",
-  "explanation": "Brief explanation of why this clause is risky",
-  "recommendation": "What action the user should take",
-  "isFlagged": true or false
+  "riskType": "The specific type from the list above (e.g., Indemnification, Limitation of Liability)",
+  "riskLevel": "HIGH if the clause significantly disadvantages the client, MEDIUM if moderately risky, LOW if minor concern",
+  "explanation": "2-3 sentence explanation of why this clause is risky and what specific language is concerning",
+  "recommendation": "1-2 sentence recommendation on how to address this clause",
+  "isFlagged": true if this clause poses any risk (riskLevel HIGH, MEDIUM, or LOW), false only if completely standard and fair
 }
 
-If the clause is standard and has no significant risks, set isFlagged to false.
+Be strict with flagging - err on the side of flagging potentially problematic clauses.
 
 CLAUSE:
-${clause.slice(0, 1500)}`
+${clause.slice(0, 2000)}`
               }
             ],
-            temperature: 0.1,
-            max_tokens: 500,
+            temperature: 0.2,
+            max_tokens: 600,
             response_format: { type: "json_object" }
           }),
         }
@@ -92,6 +127,10 @@ ${clause.slice(0, 1500)}`
         if (!["HIGH", "MEDIUM", "LOW"].includes(parsed.riskLevel)) {
           parsed.riskLevel = "MEDIUM";
         }
+      }
+
+      if (!parsed.riskType) {
+        parsed.riskType = "Other";
       }
       
       return parsed;

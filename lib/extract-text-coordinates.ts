@@ -11,17 +11,27 @@ export interface PageDimensions {
   height: number;
 }
 
+export interface TextMatchResult {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  pageNumber: number;
+}
+
 export async function extractTextWithCoordinates(
   buffer: Buffer
 ): Promise<{
   textItems: TextItem[];
   pageDimensions: Map<number, PageDimensions>;
+  fullText: string;
 }> {
   const pdfjs = await import("pdfjs-dist");
   
   const pdfData = await pdfjs.getDocument({ data: buffer }).promise;
   const textItems: TextItem[] = [];
   const pageDimensions = new Map<number, PageDimensions>();
+  const allPageTexts: string[] = [];
 
   for (let pageNum = 1; pageNum <= pdfData.numPages; pageNum++) {
     const page = await pdfData.getPage(pageNum);
@@ -33,6 +43,7 @@ export async function extractTextWithCoordinates(
     });
 
     const textContent = await page.getTextContent();
+    let pageText = "";
     
     for (const item of textContent.items) {
       if ("str" in item && item.str.trim()) {
@@ -44,45 +55,70 @@ export async function extractTextWithCoordinates(
           height: item.height || 0,
           pageNumber: pageNum,
         });
+        pageText += item.str + " ";
       }
     }
+    allPageTexts.push(pageText.trim());
   }
 
-  return { textItems, pageDimensions };
+  return { textItems, pageDimensions, fullText: allPageTexts.join("\n\n") };
+}
+
+function normalizeText(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function calculateSimilarity(text1: string, text2: string): number {
+  const norm1 = normalizeText(text1);
+  const norm2 = normalizeText(text2);
+  
+  if (norm1.includes(norm2)) return norm2.length / norm1.length;
+  if (norm2.includes(norm1)) return norm1.length / norm2.length;
+  
+  // Simple word overlap
+  const words1 = new Set(norm1.split(" "));
+  const words2 = new Set(norm2.split(" "));
+  const intersection = new Set([...words1].filter(x => words2.has(x)));
+  
+  if (intersection.size === 0) return 0;
+  
+  return intersection.size / Math.max(words1.size, words2.size);
 }
 
 export function findBestMatchingTextItem(
   clause: string,
   textItems: TextItem[],
-  pageDimensions: Map<number, PageDimensions>,
-  pageNum: number
-): { x: number; y: number; width: number; height: number } | null {
-  const pageItems = textItems.filter((item) => item.pageNumber === pageNum);
-  
-  let bestMatch: TextItem | null = null;
-  let bestScore = 0;
+  pageDimensions: Map<number, PageDimensions>
+): TextMatchResult | null {
+  let bestMatch: { item: TextItem; score: number } | null = null;
 
-  for (const item of pageItems) {
-    const itemText = item.str.toLowerCase().replace(/\s+/g, " ");
-    const clauseText = clause.toLowerCase().replace(/\s+/g, " ");
+  for (const item of textItems) {
+    const itemText = item.str;
+    const score = calculateSimilarity(itemText, clause);
     
-    if (itemText.includes(clauseText) || clauseText.includes(itemText)) {
-      const score = Math.min(itemText.length, clauseText.length);
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = item;
-      }
+    if (score > (bestMatch?.score || 0) && score > 0.3) {
+      bestMatch = { item, score };
     }
   }
 
   if (bestMatch) {
-    const transform = bestMatch.transform;
+    const matchItem = bestMatch.item;
+    const pageNum = matchItem.pageNumber;
     const pageDim = pageDimensions.get(pageNum) || { width: 612, height: 792 };
+    const transform = matchItem.transform;
+
+    // PDF coordinates have origin at bottom-left, convert to top-left for web
+    const x = (transform[4] / pageDim.width) * 100;
+    const y = 100 - ((transform[5] + (matchItem.height || 10)) / pageDim.height) * 100;
+    const width = ((matchItem.width || 100) / pageDim.width) * 100;
+    const height = ((matchItem.height || 10) / pageDim.height) * 100;
+
     return {
-      x: (transform[4] / pageDim.width) * 100,
-      y: (transform[5] / pageDim.height) * 100,
-      width: (bestMatch.width / pageDim.width) * 100,
-      height: (bestMatch.height / pageDim.height) * 100,
+      x: Math.max(0, Math.min(95, x)),
+      y: Math.max(0, Math.min(95, y)),
+      width: Math.max(5, Math.min(95, width)),
+      height: Math.max(3, Math.min(30, height * 1.5)),
+      pageNumber: pageNum,
     };
   }
 
