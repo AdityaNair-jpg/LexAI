@@ -9,6 +9,9 @@ export type Annotation = {
   riskLevel: RiskLevel;
   explanation: string;
   recommendation: string;
+  category?: string;
+  proposedSolution?: string;
+  replacementClause?: string;
   boundingBox: {
     x: number;
     y: number;
