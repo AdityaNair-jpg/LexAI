@@ -3,20 +3,22 @@
 import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { PDFViewer } from "@/components/pdf-viewer";
 import { PdfCanvasViewer } from "@/components/pdf-canvas-viewer";
 import { RiskSidebar } from "@/components/risk-sidebar";
+import { ChatSidebar } from "@/components/chat-sidebar";
 import { Navbar } from "@/components/navbar";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import type { Annotation } from "@/types";
 
 export default function DocumentPage() {
   const params = useParams();
   const documentId = params.id as string;
-  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(
-    null
-  );
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatInitialMessage, setChatInitialMessage] = useState<string>("");
+  const [documentText, setDocumentText] = useState<string>("");
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const document = useQuery(api.documents.getById, {
     id: documentId as Id<"documents">,
@@ -68,9 +70,33 @@ export default function DocumentPage() {
       riskLevel: ann.riskLevel,
       explanation: ann.explanation,
       recommendation: ann.recommendation,
+      category: ann.category,
+      proposedSolution: ann.proposedSolution,
+      replacementClause: ann.replacementClause,
       boundingBox: ann.boundingBox,
     })
   );
+
+  const handleViewSolution = (annotation: Annotation) => {
+    setActiveAnnotationId(annotation._id);
+    
+    setTimeout(() => {
+      const element = window.document.getElementById(`annotation-${annotation._id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.classList.add("ring-2", "ring-indigo-500");
+        setTimeout(() => {
+          element.classList.remove("ring-2", "ring-indigo-500");
+        }, 2000);
+      }
+    }, 100);
+  };
+
+  const handleAskAI = (annotation: Annotation) => {
+    const message = `Explain the risks of this ${annotation.category || annotation.riskType} clause and how the proposed solution protects me. The clause states: "${annotation.text.slice(0, 200)}..."`;
+    setChatInitialMessage(message);
+    setIsChatOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
@@ -134,11 +160,15 @@ export default function DocumentPage() {
             </p>
           </div>
 
-          <PdfCanvasViewer fileUrl={document.fileUrl} annotations={typedAnnotations} />
+          <PdfCanvasViewer 
+            fileUrl={document.fileUrl} 
+            annotations={typedAnnotations}
+            onViewSolution={handleViewSolution}
+          />
         </div>
 
         {/* Risk Sidebar */}
-        <div className="w-80 border-l border-white/[0.06] bg-[#0f0f18] overflow-hidden shrink-0">
+        <div ref={sidebarRef} className="w-96 border-l border-white/[0.06] bg-[#0f0f18] overflow-hidden shrink-0">
           <RiskSidebar
             annotations={typedAnnotations}
             activeAnnotationId={activeAnnotationId}
@@ -147,9 +177,22 @@ export default function DocumentPage() {
                 activeAnnotationId === id ? null : id
               )
             }
+            onAskAI={handleAskAI}
           />
         </div>
       </div>
+
+      {/* Chat Sidebar */}
+      <ChatSidebar
+        isOpen={isChatOpen}
+        onClose={() => {
+          setIsChatOpen(false);
+          setChatInitialMessage("");
+        }}
+        documentText={documentText}
+        annotations={typedAnnotations}
+        initialMessage={chatInitialMessage}
+      />
     </div>
   );
 }
