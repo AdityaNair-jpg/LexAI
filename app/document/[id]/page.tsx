@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { PDFViewer } from "@/components/pdf-viewer";
+import { PdfCanvasViewer } from "@/components/pdf-canvas-viewer";
 import { RiskSidebar } from "@/components/risk-sidebar";
 import { Navbar } from "@/components/navbar";
 import { useState } from "react";
@@ -133,7 +134,7 @@ export default function DocumentPage() {
             </p>
           </div>
 
-          <PDFViewer fileUrl={document.fileUrl} annotations={typedAnnotations} />
+          <PdfCanvasViewer fileUrl={document.fileUrl} annotations={typedAnnotations} />
         </div>
 
         {/* Risk Sidebar */}
