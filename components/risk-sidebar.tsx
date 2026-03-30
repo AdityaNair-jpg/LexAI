@@ -9,22 +9,22 @@ const RISK_CONFIG: Record<
   { color: string; bg: string; border: string; icon: string }
 > = {
   HIGH: {
-    color: "text-red-400",
-    bg: "bg-red-500/10",
-    border: "border-red-500/20",
-    icon: "🔴",
+    color: "text-red-300",
+    bg: "bg-red-900/20",
+    border: "border-red-800/30",
+    icon: "⚖️",
   },
   MEDIUM: {
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-    icon: "🟡",
+    color: "text-amber-300",
+    bg: "bg-amber-900/20",
+    border: "border-amber-800/30",
+    icon: "⚠️",
   },
   LOW: {
-    color: "text-sky-400",
-    bg: "bg-sky-500/10",
-    border: "border-sky-500/20",
-    icon: "🔵",
+    color: "text-blue-300",
+    bg: "bg-blue-900/20",
+    border: "border-blue-800/30",
+    icon: "📋",
   },
 };
 
@@ -223,7 +223,7 @@ export function RiskSidebar({
                               e.stopPropagation();
                               onAskAI(ann);
                             }}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 rounded-lg text-[11px] text-indigo-300 transition-colors w-full justify-center"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-[11px] text-amber-300 transition-colors w-full justify-center"
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
                             Ask AI about this

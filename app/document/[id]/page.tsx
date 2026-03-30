@@ -84,9 +84,9 @@ export default function DocumentPage() {
       const element = window.document.getElementById(`annotation-${annotation._id}`);
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
-        element.classList.add("ring-2", "ring-indigo-500");
+        element.classList.add("ring-2", "ring-amber-500");
         setTimeout(() => {
-          element.classList.remove("ring-2", "ring-indigo-500");
+          element.classList.remove("ring-2", "ring-amber-500");
         }, 2000);
       }
     }, 100);
@@ -99,17 +99,16 @@ export default function DocumentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-[#0c0e14]">
       <Navbar />
 
       {/* Processing state */}
       {document.status === "processing" && (
-        <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border-b border-indigo-500/20">
+        <div className="bg-gradient-to-r from-amber-900/20 to-yellow-900/20 border-b border-amber-800/30">
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
-            <div className="h-4 w-4 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
-            <p className="text-sm text-indigo-300">
-              LexAI is waking up and analyzing your document. This may take ~30
-              seconds...
+            <div className="h-4 w-4 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
+            <p className="text-sm text-amber-300">
+              LexAI is analyzing your document. This may take a moment...
             </p>
           </div>
         </div>
