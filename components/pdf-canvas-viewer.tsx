@@ -8,9 +8,9 @@ import { createPortal } from "react-dom";
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const RISK_COLORS: Record<string, string> = {
-  HIGH: "bg-red-400/30 border-l-red-500 hover:bg-red-400/50",
-  MEDIUM: "bg-amber-400/30 border-l-amber-500 hover:bg-amber-400/50",
-  LOW: "bg-sky-400/30 border-l-sky-500 hover:bg-sky-400/50",
+  HIGH: "bg-red-800/40 border-l-red-600 hover:bg-red-700/50",
+  MEDIUM: "bg-amber-700/40 border-l-amber-600 hover:bg-amber-600/50",
+  LOW: "bg-blue-800/40 border-l-blue-600 hover:bg-blue-700/50",
 };
 
 type Props = {
@@ -118,7 +118,7 @@ export function PdfCanvasViewer({ fileUrl, annotations, onViewSolution }: Props)
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin" />
+        <div className="h-8 w-8 rounded-full border-2 border-amber-500/30 border-t-amber-500 animate-spin" />
         <p className="text-gray-400 text-sm ml-3">Loading document...</p>
       </div>
     );
@@ -247,7 +247,7 @@ export function PdfCanvasViewer({ fileUrl, annotations, onViewSolution }: Props)
             )}
             <button
               onClick={() => onViewSolution?.(hoveredAnnotation)}
-              className="w-full py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 rounded-lg text-xs text-indigo-300 font-medium transition-colors"
+              className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-xs text-amber-300 font-medium transition-colors"
             >
               View Full Solution →
             </button>

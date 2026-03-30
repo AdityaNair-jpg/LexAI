@@ -22,6 +22,7 @@ type TooltipState = {
   side: "left" | "right";
 };
 
+
 export function AnnotationOverlay({ annotations, pageWidth }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState>({
     annotation: null,
@@ -35,6 +36,7 @@ export function AnnotationOverlay({ annotations, pageWidth }: Props) {
     setIsClient(true);
   }, []);
 
+  
   const handleMouseEnter = (ann: Annotation, element: HTMLDivElement) => {
     const rect = element.getBoundingClientRect();
     const containerRect = containerRef.current?.getBoundingClientRect();

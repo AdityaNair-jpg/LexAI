@@ -105,20 +105,20 @@ export function DocumentUploader() {
       {...getRootProps()}
       className={`group relative overflow-hidden border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${
         isDragActive
-          ? "border-indigo-500 bg-indigo-500/10 scale-[1.02]"
-          : "border-white/20 hover:border-indigo-500/50 hover:bg-white/5"
+          ? "border-amber-500 bg-amber-500/10 scale-[1.02]"
+          : "border-white/20 hover:border-amber-500/50 hover:bg-white/5"
       } ${uploading ? "pointer-events-none opacity-60" : ""}`}
     >
       <input {...getInputProps()} />
 
       {/* Gradient glow on hover */}
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-violet-500/0 to-indigo-500/0 group-hover:from-indigo-500/5 group-hover:via-violet-500/5 group-hover:to-indigo-500/5 transition-all duration-500" />
+      <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-yellow-500/0 to-amber-500/0 group-hover:from-amber-500/5 group-hover:via-yellow-500/5 group-hover:to-amber-500/5 transition-all duration-500" />
 
       <div className="relative z-10">
         {uploading ? (
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
-              <div className="h-16 w-16 rounded-full border-4 border-indigo-500/30 border-t-indigo-500 animate-spin" />
+              <div className="h-16 w-16 rounded-full border-4 border-amber-500/30 border-t-amber-500 animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-2xl">⚖️</span>
               </div>
@@ -130,7 +130,7 @@ export function DocumentUploader() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 group-hover:scale-110 transition-transform duration-300">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border border-amber-500/20 group-hover:scale-110 transition-transform duration-300">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -139,7 +139,7 @@ export function DocumentUploader() {
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-10 w-10 text-indigo-400"
+                className="h-10 w-10 text-amber-400"
               >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
