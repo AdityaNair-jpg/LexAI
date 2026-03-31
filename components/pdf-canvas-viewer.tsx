@@ -4,13 +4,14 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import type { Annotation } from "@/types";
 import { createPortal } from "react-dom";
+import { ChevronLeft, ChevronRight, Minus, Plus, Shield } from "lucide-react";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const RISK_COLORS: Record<string, string> = {
-  HIGH: "bg-red-800/40 border-l-red-600 hover:bg-red-700/50",
-  MEDIUM: "bg-amber-700/40 border-l-amber-600 hover:bg-amber-600/50",
-  LOW: "bg-blue-800/40 border-l-blue-600 hover:bg-blue-700/50",
+  HIGH: "bg-red-500/10 border-l-red-500 hover:bg-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]",
+  MEDIUM: "bg-[#9a7b4f]/10 border-l-[#9a7b4f] hover:bg-[#9a7b4f]/20 shadow-[0_0_15px_rgba(154,123,79,0.1)]",
+  LOW: "bg-blue-500/10 border-l-blue-500 hover:bg-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]",
 };
 
 type Props = {
@@ -24,7 +25,7 @@ export function PdfCanvasViewer({ fileUrl, annotations, onViewSolution }: Props)
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-  const [scale, setScale] = useState(1.2);
+  const [scale, setScale] = useState(1.1);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<Annotation | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isClient, setIsClient] = useState(false);
@@ -62,12 +63,20 @@ export function PdfCanvasViewer({ fileUrl, annotations, onViewSolution }: Props)
 
       if (!context) return;
 
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+      const outputScale = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(viewport.width * outputScale);
+      canvas.height = Math.floor(viewport.height * outputScale);
+      canvas.style.width = Math.floor(viewport.width) + "px";
+      canvas.style.height = Math.floor(viewport.height) + "px";
+
+      const transform = outputScale !== 1
+        ? [outputScale, 0, 0, outputScale, 0, 0]
+        : undefined;
 
       const renderContext = {
         canvasContext: context,
         viewport: viewport,
+        transform: transform,
         canvas: canvas,
       };
 
@@ -90,7 +99,8 @@ export function PdfCanvasViewer({ fileUrl, annotations, onViewSolution }: Props)
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const xPercent = (x / rect.width) * 100;
@@ -117,139 +127,138 @@ export function PdfCanvasViewer({ fileUrl, annotations, onViewSolution }: Props)
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 rounded-full border-2 border-amber-500/30 border-t-amber-500 animate-spin" />
-        <p className="text-gray-400 text-sm ml-3">Loading document...</p>
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <div className="h-12 w-12 rounded-full border-2 border-stone-100 border-t-[#9a7b4f] animate-spin" />
+        <p className="text-stone-400 font-serif text-sm italic">Synthesizing document...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      {/* Canvas Container */}
+    <div className="flex flex-col items-center gap-6">
+      {/* Canvas Toolset */}
+      <div className="flex items-center justify-between w-full bg-stone-50/50 p-3 rounded-2xl border border-stone-200 shadow-sm">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage <= 1}
+            className="p-2 hover:bg-white disabled:opacity-20 rounded-xl transition-all border border-transparent hover:border-stone-200"
+          >
+            <ChevronLeft className="w-5 h-5 text-stone-600" />
+          </button>
+          <div className="px-4 py-1.5 bg-white border border-stone-200 rounded-xl shadow-sm">
+            <span className="text-xs font-bold text-stone-900 tabular-nums">
+              {currentPage} <span className="text-stone-300 font-normal mx-1">/</span> {numPages}
+            </span>
+          </div>
+          <button
+            onClick={handleNextPage}
+            disabled={currentPage >= numPages}
+            className="p-2 hover:bg-white disabled:opacity-20 rounded-xl transition-all border border-transparent hover:border-stone-200"
+          >
+            <ChevronRight className="w-5 h-5 text-stone-600" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setScale(Math.max(0.5, scale - 0.2))}
+            className="p-2 hover:bg-white rounded-xl transition-all border border-transparent hover:border-stone-200"
+          >
+            <Minus className="w-4 h-4 text-stone-600" />
+          </button>
+          <div className="w-16 text-center">
+            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest tabular-nums">
+              {Math.round(scale * 100)}%
+            </span>
+          </div>
+          <button
+            onClick={() => setScale(Math.min(2.5, scale + 0.2))}
+            className="p-2 hover:bg-white rounded-xl transition-all border border-transparent hover:border-stone-200"
+          >
+            <Plus className="w-4 h-4 text-stone-600" />
+          </button>
+        </div>
+      </div>
+
+      {/* PDF Viewport */}
       <div
         ref={containerRef}
-        className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/30 border border-white/10"
+        className="relative rounded-2xl overflow-hidden cursor-crosshair group shadow-inner bg-stone-50 select-none"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHoveredAnnotation(null)}
       >
-        <canvas ref={canvasRef} className="block" />
+        <canvas ref={canvasRef} className="block shadow-2xl shadow-stone-400/20" />
         
-        {/* Annotation Overlay */}
+        {/* Risk Injection Overlays */}
         <div className="absolute inset-0 pointer-events-none">
           {pageAnnotations.map((ann) => (
             <div
               key={ann._id}
-              onClick={() => onViewSolution?.(ann)}
-              className={`absolute border-l-4 cursor-pointer pointer-events-auto transition-all duration-150 rounded-sm ${
-                hoveredAnnotation?._id === ann._id
-                  ? RISK_COLORS[ann.riskLevel]?.replace("/30", "/50") || ""
-                  : RISK_COLORS[ann.riskLevel] || ""
-              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewSolution?.(ann);
+              }}
+              className={`absolute border-l-2 cursor-pointer pointer-events-auto transition-all duration-300 ${
+                RISK_COLORS[ann.riskLevel] || ""
+              } ${hoveredAnnotation?._id === ann._id ? "scale-[1.01] z-10" : "z-0"}`}
               style={{
                 left: `${ann.boundingBox.x}%`,
                 top: `${ann.boundingBox.y}%`,
                 width: `${ann.boundingBox.width}%`,
-                height: `${Math.max(ann.boundingBox.height, 3)}%`,
-                minHeight: "1.5rem",
+                height: `${Math.max(ann.boundingBox.height, 2.5)}%`,
+                minHeight: "1.4rem",
               }}
             />
           ))}
         </div>
       </div>
 
-      {/* Page Navigation */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={handlePrevPage}
-          disabled={currentPage <= 1}
-          className="px-4 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors"
-        >
-          ← Previous
-        </button>
-        <span className="text-gray-400 text-sm">
-          Page {currentPage} of {numPages}
-        </span>
-        <button
-          onClick={handleNextPage}
-          disabled={currentPage >= numPages}
-          className="px-4 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors"
-        >
-          Next →
-        </button>
-      </div>
-
-      {/* Zoom Controls */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => setScale(Math.max(0.5, scale - 0.2))}
-          className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm"
-        >
-          −
-        </button>
-        <span className="text-gray-400 text-xs w-16 text-center">
-          {Math.round(scale * 100)}%
-        </span>
-        <button
-          onClick={() => setScale(Math.min(2.5, scale + 0.2))}
-          className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm"
-        >
-          +
-        </button>
-      </div>
-
-      {/* Tooltip Portal */}
+      {/* Audit Tooltip (Portal) */}
       {isClient && hoveredAnnotation && createPortal(
         <div
-          className="fixed z-[9999] pointer-events-none"
+          className="fixed z-[9999] pointer-events-none animate-in fade-in zoom-in duration-200"
           style={{
-            left: Math.min(tooltipPosition.x + 20, window.innerWidth - 350),
-            top: Math.min(tooltipPosition.y - 20, window.innerHeight - 450),
+            left: Math.min(tooltipPosition.x + 24, window.innerWidth - 380),
+            top: Math.min(tooltipPosition.y + 12, window.innerHeight - 300),
           }}
         >
-          <div className="w-80 bg-[#1a1a2e]/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-semibold text-white text-sm truncate pr-2">
-                {hoveredAnnotation.riskType}
-              </span>
+          <div className="w-80 bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.12)] border border-stone-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Shield className={`w-4 h-4 ${
+                  hoveredAnnotation.riskLevel === "HIGH" ? "text-red-500" : 
+                  hoveredAnnotation.riskLevel === "MEDIUM" ? "text-[#9a7b4f]" : "text-blue-500"
+                }`} />
+                <span className="font-serif font-medium text-stone-900 text-sm">
+                  {hoveredAnnotation.category || "Audit Point"}
+                </span>
+              </div>
               <span
-                className={`text-xs px-2 py-0.5 rounded-full font-semibold uppercase ${
+                className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest ${
                   hoveredAnnotation.riskLevel === "HIGH"
-                    ? "bg-red-500/20 text-red-300"
+                    ? "bg-red-50 text-red-600"
                     : hoveredAnnotation.riskLevel === "MEDIUM"
-                    ? "bg-amber-500/20 text-amber-300"
-                    : "bg-sky-500/20 text-sky-300"
+                    ? "bg-[#9a7b4f]/10 text-[#9a7b4f]"
+                    : "bg-blue-50 text-blue-600"
                 }`}
               >
                 {hoveredAnnotation.riskLevel}
               </span>
             </div>
-            <p className="text-xs text-gray-400 italic border-l-2 border-gray-600 pl-2 mb-3 line-clamp-2">
-              &ldquo;{hoveredAnnotation.text}&rdquo;
+            
+            <p className="text-xs text-stone-700 leading-relaxed font-serif mb-5 line-clamp-4">
+              {hoveredAnnotation.explanation}
             </p>
-            <div className="mb-2">
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">
-                Why risky
-              </p>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                {hoveredAnnotation.explanation}
-              </p>
-            </div>
-            {hoveredAnnotation.proposedSolution && (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 mb-2">
-                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">
-                  ✅ Solution
-                </p>
-                <p className="text-xs text-emerald-300 line-clamp-3">
-                  {hoveredAnnotation.proposedSolution}
-                </p>
-              </div>
-            )}
+
             <button
-              onClick={() => onViewSolution?.(hoveredAnnotation)}
-              className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-xs text-amber-300 font-medium transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewSolution?.(hoveredAnnotation);
+              }}
+              className="w-full py-3 bg-stone-900 hover:bg-stone-800 rounded-xl text-[10px] font-bold text-[#c5a368] uppercase tracking-widest transition-all shadow-lg active:scale-[0.98] pointer-events-auto"
             >
-              View Full Solution →
+              Examine Proposed Solution
             </button>
           </div>
         </div>,

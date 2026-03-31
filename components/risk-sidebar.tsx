@@ -2,29 +2,29 @@
 
 import { useState } from "react";
 import type { Annotation, RiskLevel } from "@/types";
-import { Copy, Check, MessageSquare, ChevronDown, ChevronRight } from "lucide-react";
+import { Copy, Check, MessageSquare, ChevronRight, Shield, AlertCircle, FileText } from "lucide-react";
 
 const RISK_CONFIG: Record<
   RiskLevel,
-  { color: string; bg: string; border: string; icon: string }
+  { color: string; bg: string; border: string; icon: any }
 > = {
   HIGH: {
-    color: "text-red-300",
-    bg: "bg-red-900/20",
-    border: "border-red-800/30",
-    icon: "⚖️",
+    color: "text-red-700",
+    bg: "bg-red-50",
+    border: "border-red-100",
+    icon: <AlertCircle className="w-4 h-4" />,
   },
   MEDIUM: {
-    color: "text-amber-300",
-    bg: "bg-amber-900/20",
-    border: "border-amber-800/30",
-    icon: "⚠️",
+    color: "text-amber-700",
+    bg: "bg-amber-50",
+    border: "border-amber-100",
+    icon: <Shield className="w-4 h-4" />,
   },
   LOW: {
-    color: "text-blue-300",
-    bg: "bg-blue-900/20",
-    border: "border-blue-800/30",
-    icon: "📋",
+    color: "text-blue-700",
+    bg: "bg-blue-50",
+    border: "border-blue-100",
+    icon: <FileText className="w-4 h-4" />,
   },
 };
 
@@ -41,12 +41,12 @@ export function RiskSidebar({
   onAnnotationClick,
   onAskAI,
 }: Props) {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["Liability", "Indemnification"]));
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const groupedByCategory = annotations.reduce(
     (acc, ann) => {
-      const category = ann.category || "Other";
+      const category = ann.category || "General";
       if (!acc[category]) {
         acc[category] = [];
       }
@@ -77,159 +77,163 @@ export function RiskSidebar({
   const totalCount = annotations.length;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white select-none">
       {/* Header */}
-      <div className="p-5 border-b border-white/10">
-        <h2 className="font-bold text-white text-lg mb-1">Risk Analysis</h2>
-        <p className="text-gray-500 text-xs">
-          {totalCount} clause{totalCount !== 1 ? "s" : ""} flagged
+      <div className="p-6 border-b border-stone-100 bg-stone-50/50">
+        <div className="flex items-center gap-2 mb-1">
+          <Shield className="w-5 h-5 text-[#9a7b4f]" />
+          <h2 className="font-serif font-medium text-stone-900 text-xl tracking-tight">Audit Findings</h2>
+        </div>
+        <p className="text-stone-400 text-xs font-semibold uppercase tracking-widest">
+          {totalCount} identified point{totalCount !== 1 ? "s" : ""} of interest
         </p>
 
-        {/* Summary badges */}
-        <div className="flex gap-2 mt-3 flex-wrap">
+        {/* Quick-filter badges */}
+        <div className="flex gap-2 mt-4 flex-wrap">
           {Object.entries(groupedByCategory).map(([category, items]) => (
             <button
               key={category}
               onClick={() => toggleCategory(category)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 transition-colors"
+              className="flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-white border border-stone-200 text-stone-500 hover:border-[#9a7b4f]/40 hover:text-[#9a7b4f] transition-all duration-300 shadow-sm"
             >
               <span>{category}</span>
-              <span className="bg-white/10 px-1.5 rounded-full">{items.length}</span>
+              <span className="bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded-md min-w-[1.25rem] text-center">{items.length}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Scrollable annotation list */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
+      {/* Scrollable findings list */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin bg-white">
         {categories.map((category) => {
           const items = groupedByCategory[category];
           const isExpanded = expandedCategories.has(category);
 
           return (
-            <div key={category} className="border border-white/10 rounded-lg overflow-hidden">
-              {/* Category Header */}
+            <div key={category} className="rounded-2xl border border-stone-100 bg-white overflow-hidden shadow-sm shadow-stone-200/40">
+              {/* Category Dropdown Header */}
               <button
                 onClick={() => toggleCategory(category)}
-                className="w-full flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 transition-colors"
+                className="w-full flex items-center justify-between p-4 bg-stone-50 border-b border-stone-100 hover:bg-stone-100/50 transition-colors"
               >
-                <div className="flex items-center gap-2">
-                  {isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                  )}
-                  <span className="text-sm font-semibold text-white">{category}</span>
+                <div className="flex items-center gap-3">
+                  <div className={`transition-transform duration-300 ${isExpanded ? "rotate-90" : ""}`}>
+                    <ChevronRight className="w-4 h-4 text-stone-400" />
+                  </div>
+                  <span className="text-sm font-serif font-medium text-stone-900">{category}</span>
                 </div>
-                <span className="text-xs text-gray-500">{items.length} items</span>
+                <span className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">{items.length} Findings</span>
               </button>
 
-              {/* Category Items */}
+              {/* Finding Items */}
               {isExpanded && (
-                <div className="space-y-2 p-3 pt-0">
+                <div className="p-2 space-y-2">
                   {items.map((ann) => {
                     const config = RISK_CONFIG[ann.riskLevel as RiskLevel];
                     const isActive = activeAnnotationId === ann._id;
 
                     return (
-                      <button
+                      <div
                         key={ann._id}
                         id={`annotation-${ann._id}`}
                         onClick={() => onAnnotationClick(ann._id)}
-                        className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${
+                        className={`w-full text-left p-4 rounded-xl border transition-all duration-500 cursor-pointer ${
                           isActive
-                            ? `${config.bg} ${config.border} ring-1 ring-white/10`
-                            : "border-white/5 hover:border-white/10 hover:bg-white/5"
+                            ? "bg-white border-[#9a7b4f]/40 shadow-xl shadow-[#9a7b4f]/5 ring-1 ring-[#9a7b4f]/10"
+                            : "border-stone-100 bg-white hover:border-[#9a7b4f]/10 hover:bg-stone-50/50"
                         }`}
                       >
-                        {/* Risk Type & Level */}
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-semibold text-white">
-                            {ann.riskType}
-                          </p>
+                        {/* Status Line */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className={`flex items-center gap-2 ${config.color}`}>
+                            {config.icon}
+                            <span className="text-[10px] font-bold uppercase tracking-widest">{ann.riskType}</span>
+                          </div>
                           <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
+                            className={`text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-widest ${
                               ann.riskLevel === "HIGH"
-                                ? "bg-red-500/20 text-red-300"
+                                ? "bg-red-50 text-red-700"
                                 : ann.riskLevel === "MEDIUM"
-                                ? "bg-amber-500/20 text-amber-300"
-                                : "bg-sky-500/20 text-sky-300"
+                                ? "bg-amber-50 text-amber-700"
+                                : "bg-blue-50 text-blue-700"
                             }`}
                           >
-                            {ann.riskLevel}
+                            Liability: {ann.riskLevel}
                           </span>
                         </div>
 
-                        {/* Original Clause */}
-                        <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed mb-2 italic">
-                          &ldquo;{ann.text}&rdquo;
-                        </p>
+                        {/* Citation */}
+                        <div className="relative pl-4 mb-3 border-l-2 border-stone-100 group">
+                          <p className="text-[11px] text-stone-400 line-clamp-3 leading-relaxed italic group-hover:text-stone-500 transition-colors" title={ann.text}>
+                            &ldquo;{ann.text}&rdquo;
+                          </p>
+                        </div>
 
-                        {/* Explanation */}
-                        <p className="text-[11px] text-gray-300 leading-relaxed mb-2">
+                        {/* Professional Guidance */}
+                        <p className="text-xs text-stone-700 leading-relaxed font-serif mb-4">
                           {ann.explanation}
                         </p>
 
-                        {/* Proposed Solution - Highlighted */}
-                        {ann.proposedSolution && (
-                          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 mb-2">
-                            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">
-                              ✅ Proposed Solution
-                            </p>
-                            <p className="text-xs text-emerald-300 leading-relaxed">
-                              {ann.proposedSolution}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Replacement Clause */}
-                        {ann.replacementClause && (
-                          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 mb-2">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
-                                📋 Replacement Clause
+                        {/* Strategy & Clause Injection */}
+                        <div className="space-y-2">
+                          {ann.proposedSolution && (
+                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-3">
+                              <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1 shadow-sm">
+                                Recommendation
                               </p>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyToClipboard(ann.replacementClause || "", ann._id);
-                                }}
-                                className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors"
-                              >
-                                {copiedId === ann._id ? (
-                                  <>
-                                    <Check className="w-3 h-3" />
-                                    <span>Copied!</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3 h-3" />
-                                    <span>Copy</span>
-                                  </>
-                                )}
-                              </button>
+                              <p className="text-xs text-emerald-700 leading-relaxed">
+                                {ann.proposedSolution}
+                              </p>
                             </div>
-                            <p className="text-[11px] text-blue-200/80 leading-relaxed font-mono">
-                              {ann.replacementClause.slice(0, 150)}
-                              {ann.replacementClause.length > 150 ? "..." : ""}
-                            </p>
-                          </div>
-                        )}
+                          )}
 
-                        {/* Action Buttons */}
-                        {onAskAI && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAskAI(ann);
-                            }}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-[11px] text-amber-300 transition-colors w-full justify-center"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            Ask AI about this
-                          </button>
-                        )}
-                      </button>
+                          {ann.replacementClause && (
+                            <div className="bg-stone-900 rounded-xl p-4 transition-all duration-300">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-[9px] font-bold text-[#c5a368] uppercase tracking-widest">
+                                  Injected Clause
+                                </p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyToClipboard(ann.replacementClause || "", ann._id);
+                                  }}
+                                  className="flex items-center gap-1.5 text-[9px] font-bold text-[#c5a368] hover:text-white transition-colors"
+                                >
+                                  {copiedId === ann._id ? (
+                                    <>
+                                      <Check className="w-3 h-3" />
+                                      <span>Copied</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3 h-3" />
+                                      <span>Copy</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                              <p className="text-[10px] text-stone-400 leading-relaxed font-mono">
+                                {ann.replacementClause.slice(0, 150)}
+                                {ann.replacementClause.length > 150 ? "..." : ""}
+                              </p>
+                            </div>
+                          )}
+
+                          {onAskAI && isActive && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAskAI(ann);
+                              }}
+                              className="flex items-center gap-2 px-4 py-2.5 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-[10px] font-bold text-stone-600 uppercase tracking-widest transition-all duration-300 mt-2 w-full justify-center shadow-sm active:scale-[0.98]"
+                            >
+                              <MessageSquare className="w-4 h-4 text-[#9a7b4f]" />
+                              Consult AI Specialist
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -239,12 +243,16 @@ export function RiskSidebar({
         })}
 
         {totalCount === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="text-4xl mb-3">✅</div>
-            <p className="text-white font-medium mb-1">All Clear</p>
-            <p className="text-gray-500 text-xs">
-              No risky clauses detected in this document.
-            </p>
+          <div className="flex flex-col items-center justify-center py-20 text-center gap-4 bg-stone-50/50 rounded-[32px] border-2 border-dashed border-stone-100">
+            <div className="h-16 w-16 flex items-center justify-center rounded-2xl bg-white shadow-xl shadow-stone-200/50">
+              <Check className="w-8 h-8 text-emerald-500" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-stone-900 font-serif font-medium text-lg">No Risks Identified</p>
+              <p className="text-stone-400 text-xs max-w-[180px]">
+                The automated audit found no critical liabilities in this document.
+              </p>
+            </div>
           </div>
         )}
       </div>

@@ -6,6 +6,7 @@ import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useRouter } from "next/navigation";
 import type { Id } from "../convex/_generated/dataModel";
+import { Shield, Upload, FileText, Loader2 } from "lucide-react";
 
 export function DocumentUploader() {
   const [uploading, setUploading] = useState(false);
@@ -22,7 +23,7 @@ export function DocumentUploader() {
       if (!file) return;
 
       setUploading(true);
-      setProgress("Uploading document...");
+      setProgress("Securing document...");
 
       try {
         // 1. Get Convex upload URL
@@ -37,14 +38,14 @@ export function DocumentUploader() {
         const { storageId } = await uploadRes.json();
 
         // 3. Create document record in DB
-        setProgress("Creating document record...");
+        setProgress("Parsing legal structure...");
         const { docId, fileUrl } = await createDocument({
           fileName: file.name,
           fileStorageId: storageId,
         });
 
         // 4. Trigger AI analysis
-        setProgress("Analyzing with LexAI — this may take ~30 seconds...");
+        setProgress("LexAI Engine: Identifying Risky Clauses...");
         const analyzeRes = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -56,6 +57,7 @@ export function DocumentUploader() {
 
           // 5. Store annotations in Convex
           if (annotations && annotations.length > 0) {
+            setProgress("Optimizing results...");
             await createAnnotations({
               documentId: docId as Id<"documents">,
               annotations: annotations,
@@ -103,56 +105,50 @@ export function DocumentUploader() {
   return (
     <div
       {...getRootProps()}
-      className={`group relative overflow-hidden border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${
+      className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-16 text-center cursor-pointer transition-all duration-500 ${
         isDragActive
-          ? "border-amber-500 bg-amber-500/10 scale-[1.02]"
-          : "border-white/20 hover:border-amber-500/50 hover:bg-white/5"
-      } ${uploading ? "pointer-events-none opacity-60" : ""}`}
+          ? "border-[#9a7b4f] bg-[#9a7b4f]/5 scale-[1.01]"
+          : "border-stone-200 bg-stone-50/50 hover:border-[#9a7b4f]/40 hover:bg-white"
+      } ${uploading ? "pointer-events-none" : ""}`}
     >
       <input {...getInputProps()} />
 
-      {/* Gradient glow on hover */}
-      <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-yellow-500/0 to-amber-500/0 group-hover:from-amber-500/5 group-hover:via-yellow-500/5 group-hover:to-amber-500/5 transition-all duration-500" />
-
       <div className="relative z-10">
         {uploading ? (
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-6">
             <div className="relative">
-              <div className="h-16 w-16 rounded-full border-4 border-amber-500/30 border-t-amber-500 animate-spin" />
+              <Loader2 className="h-16 w-16 text-[#9a7b4f] animate-spin stroke-[1.5]" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl">⚖️</span>
+                <Shield className="h-6 w-6 text-stone-300" />
               </div>
             </div>
-            <p className="text-gray-300 font-medium text-lg">{progress}</p>
-            <p className="text-gray-500 text-sm">
-              LexAI is analyzing your document for risky clauses...
-            </p>
+            <div className="space-y-2">
+              <p className="text-stone-900 font-serif text-2xl font-medium">{progress}</p>
+              <p className="text-stone-400 text-sm max-w-xs mx-auto">
+                Our AI model is currently auditing your document for potential legal liabilities.
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border border-amber-500/20 group-hover:scale-110 transition-transform duration-300">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-10 w-10 text-amber-400"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
+          <div className="flex flex-col items-center gap-8">
+            <div className="flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white border border-stone-100 shadow-xl shadow-stone-200/50 group-hover:scale-110 group-hover:shadow-[#9a7b4f]/10 transition-all duration-500">
+              <Upload className="h-8 w-8 text-[#9a7b4f] transition-transform group-hover:-translate-y-1" />
             </div>
             <div>
-              <p className="text-xl font-semibold text-white mb-1.5">
-                Drop your legal document here
+              <p className="text-2xl font-serif font-medium text-stone-900 mb-3 px-4">
+                Begin your legal audit
               </p>
-              <p className="text-gray-500 text-sm">
-                PDF files up to 10MB — or click to browse
+              <p className="text-stone-500 text-sm flex items-center justify-center gap-2">
+                <FileText className="w-4 h-4" />
+                Upload PDF (Max 10MB) or click to browse
               </p>
+            </div>
+            <div className="mt-4 flex items-center gap-6 grayscale opacity-30 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700">
+              <div className="w-px h-8 bg-stone-200" />
+              <div className="flex items-center gap-2 text-xs font-semibold text-stone-400 group-hover:text-[#9a7b4f] uppercase tracking-widest transition-colors">
+                <Shield className="w-3.5 h-3.5" />
+                Secure Processing
+              </div>
             </div>
           </div>
         )}
