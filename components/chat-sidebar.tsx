@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, X, Bot, User, Loader2 } from "lucide-react";
+import { Send, X, Shield, User, Loader2, Sparkles } from "lucide-react";
 import type { Annotation } from "@/types";
 
 type Message = {
@@ -33,10 +33,9 @@ export function ChatSidebar({
 
   useEffect(() => {
     if (initialMessage && messages.length === 0) {
-      setMessages([
-        { id: "1", role: "user", content: initialMessage }
-      ]);
-      handleSendMessage(initialMessage);
+      const userMsg: Message = { id: Date.now().toString(), role: "user", content: initialMessage };
+      setMessages([userMsg]);
+      handleSendMessage(initialMessage, [userMsg]);
     }
   }, [initialMessage]);
 
@@ -44,7 +43,8 @@ export function ChatSidebar({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, currentMessages?: Message[]) => {
+    const activeMessages = currentMessages || messages;
     if (!text.trim() || isLoading) return;
 
     const userMessage: Message = {
@@ -53,7 +53,10 @@ export function ChatSidebar({
       content: text,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    if (!currentMessages) {
+      setMessages((prev) => [...prev, userMessage]);
+    }
+    
     setInput("");
     setIsLoading(true);
     setError(null);
@@ -63,7 +66,7 @@ export function ChatSidebar({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
+          messages: [...activeMessages, ...(currentMessages ? [] : [userMessage])],
           documentContext: {
             fullText: documentText,
             annotations: annotations.map((ann) => ({
@@ -78,7 +81,7 @@ export function ChatSidebar({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to get response");
+        throw new Error("Failed to consult AI counsel");
       }
 
       const reader = response.body?.getReader();
@@ -123,82 +126,81 @@ export function ChatSidebar({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-[#0f0f18] border-l border-white/10 shadow-2xl z-50 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-            <Bot className="w-4 h-4 text-amber-400" />
+    <div className="fixed inset-y-0 right-0 w-[400px] bg-white border-l border-stone-200 shadow-[-12px_0_40px_rgba(0,0,0,0.08)] z-[60] flex flex-col animate-in slide-in-from-right duration-500">
+      {/* Sidebar Header */}
+      <div className="flex items-center justify-between p-6 border-b border-stone-100 bg-stone-50/50">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-white border border-stone-200 shadow-sm flex items-center justify-center">
+            <Shield className="w-5 h-5 text-[#9a7b4f]" />
           </div>
           <div>
-            <h3 className="text-white font-semibold text-sm">LexAI Assistant</h3>
-            <p className="text-gray-500 text-xs">Ask about your contract</p>
+            <h3 className="text-stone-900 font-serif font-medium text-lg leading-tight">AI Counsel</h3>
+            <p className="text-stone-400 text-[10px] font-bold uppercase tracking-widest">Always active</p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+          className="p-2 hover:bg-white rounded-xl transition-all border border-transparent hover:border-stone-200 group"
         >
-          <X className="w-4 h-4 text-gray-400" />
+          <X className="w-4 h-4 text-stone-400 group-hover:text-stone-600 transition-colors" />
         </button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Conversation Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin bg-white">
         {messages.length === 0 && (
-          <div className="text-center py-8">
-            <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
-              <Bot className="w-6 h-6 text-amber-400" />
+          <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
+            <div className="w-20 h-20 rounded-[2.5rem] bg-stone-50 border border-stone-100 shadow-inner flex items-center justify-center mb-2">
+              <Sparkles className="w-8 h-8 text-[#9a7b4f]/30" />
             </div>
-            <p className="text-white font-medium text-sm mb-1">Hello!</p>
-            <p className="text-gray-500 text-xs">
-              Ask me anything about your contract, risks, or suggested solutions.
-            </p>
+            <div className="space-y-1">
+              <p className="text-stone-900 font-serif font-medium text-xl">Consultation Started</p>
+              <p className="text-stone-400 text-xs max-w-[220px] mx-auto leading-relaxed">
+                Ask specific questions about clauses, risks, or negotiation strategies.
+              </p>
+            </div>
           </div>
         )}
 
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex gap-2 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
             {message.role === "assistant" && (
-              <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-1">
-                <Bot className="w-3 h-3 text-amber-400" />
+              <div className="w-8 h-8 rounded-xl bg-[#9a7b4f]/10 border border-[#9a7b4f]/20 flex items-center justify-center shrink-0 mt-1">
+                <Shield className="w-4 h-4 text-[#9a7b4f]" />
               </div>
             )}
             <div
-              className={`max-w-[85%] rounded-lg px-3 py-2 ${
+              className={`max-w-[85%] rounded-[1.5rem] px-5 py-3.5 shadow-sm ${
                 message.role === "user"
-                  ? "bg-amber-500/20 text-white"
-                  : "bg-white/5 text-gray-300"
+                  ? "bg-stone-900 text-[#c5a368] rounded-tr-none border border-stone-800"
+                  : "bg-stone-50 text-stone-700 rounded-tl-none border border-stone-100"
               }`}
             >
-              <p className="text-xs leading-relaxed whitespace-pre-wrap">
+              <p className="text-xs leading-relaxed font-serif whitespace-pre-wrap">
                 {message.content}
               </p>
             </div>
-            {message.role === "user" && (
-              <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0 mt-1">
-                <User className="w-3 h-3 text-gray-400" />
-              </div>
-            )}
           </div>
         ))}
 
         {isLoading && (
-          <div className="flex gap-2">
-            <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-1">
-              <Bot className="w-3 h-3 text-amber-400" />
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#9a7b4f]/10 border border-[#9a7b4f]/20 flex items-center justify-center shrink-0 mt-1">
+              <Shield className="w-4 h-4 text-[#9a7b4f]" />
             </div>
-            <div className="bg-white/5 rounded-lg px-3 py-2">
-              <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+            <div className="bg-stone-50 rounded-[1.5rem] px-5 py-4 border border-stone-100 flex items-center gap-3">
+              <Loader2 className="w-4 h-4 text-[#9a7b4f] animate-spin" />
+              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest animate-pulse">Analyzing...</span>
             </div>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 text-red-300 text-xs">
+          <div className="bg-red-50 border border-red-100 rounded-2xl px-5 py-4 text-red-700 text-[11px] font-medium flex items-center gap-3 animate-in shake-in-y duration-300">
+            <X className="w-4 h-4" />
             Error: {error}
           </div>
         )}
@@ -206,26 +208,29 @@ export function ChatSidebar({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-white/10">
-        <div className="flex gap-2">
+      {/* Input Field */}
+      <div className="p-6 border-t border-stone-100 bg-stone-50/30">
+        <form onSubmit={handleSubmit} className="relative">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-amber-500/50"
+            placeholder="Ask your AI counsel..."
+            className="w-full bg-white border border-stone-200 rounded-2xl pl-5 pr-14 py-4 text-stone-900 text-sm placeholder:text-stone-300 focus:outline-none focus:border-[#9a7b4f]/50 focus:shadow-[0_0_0_4px_rgba(154,123,79,0.05)] transition-all shadow-sm"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="p-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+            className="absolute right-2 top-2 p-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-20 disabled:scale-95 text-[#c5a368] rounded-xl transition-all shadow-lg active:scale-90"
           >
-            <Send className="w-4 h-4 text-white" />
+            <Send className="w-4 h-4" />
           </button>
-        </div>
-      </form>
+        </form>
+        <p className="text-center text-stone-400 text-[9px] mt-4 font-bold uppercase tracking-widest">
+          Secured by LexAI Protocol
+        </p>
+      </div>
     </div>
   );
 }

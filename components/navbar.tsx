@@ -3,47 +3,33 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
+import { Scale } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
   const { isSignedIn, isLoaded } = useUser();
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#0c0e14]/80 backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 w-full border-b border-stone-200/50 bg-white/70 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg shadow-amber-500/25 transition-shadow group-hover:shadow-amber-500/40">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5 text-white"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <polyline points="10 9 9 9 8 9" />
-            </svg>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-900 shadow-lg shadow-stone-900/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-stone-900/20">
+            <Scale className="h-5.5 w-5.5 text-[#c5a368]" strokeWidth={1.5} />
           </div>
-          <span className="text-lg font-bold tracking-tight text-white">
-            Lex<span className="text-amber-400">AI</span>
+          <span className="text-xl font-bold font-serif tracking-tight text-stone-900">
+            Lex<span className="text-[#9a7b4f]">AI</span>
           </span>
         </Link>
 
         {/* Navigation Links */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-2">
           <Link
             href="/dashboard"
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
               pathname === "/dashboard"
-                ? "bg-white/10 text-white"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
+                ? "bg-stone-100 text-stone-900"
+                : "text-stone-500 hover:text-stone-900 hover:bg-stone-50"
             }`}
           >
             Dashboard
@@ -56,7 +42,7 @@ export function Navbar() {
             <UserButton
               appearance={{
                 elements: {
-                  avatarBox: "h-8 w-8 ring-2 ring-amber-500/20",
+                  avatarBox: "h-9 w-9 ring-2 ring-stone-100",
                 },
               }}
             />
@@ -64,13 +50,13 @@ export function Navbar() {
             <>
               <Link
                 href="/sign-in"
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                className="px-4 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 href="/sign-up"
-                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-white text-sm font-semibold rounded-full shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-200 hover:scale-105"
+                className="px-6 py-2.5 bg-stone-900 text-white text-sm font-semibold rounded-full shadow-lg shadow-stone-900/10 hover:shadow-stone-900/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
                 Get Started
               </Link>

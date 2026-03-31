@@ -6,9 +6,9 @@ import { AnnotationTooltip } from "./annotation-tooltip";
 import type { Annotation } from "@/types";
 
 const RISK_COLORS: Record<string, string> = {
-  HIGH: "bg-red-400/25 border-l-red-500 hover:bg-red-400/40",
-  MEDIUM: "bg-amber-400/25 border-l-amber-500 hover:bg-amber-400/40",
-  LOW: "bg-sky-400/25 border-l-sky-500 hover:bg-sky-400/40",
+  HIGH: "bg-red-500/10 border-l-red-500 hover:bg-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.05)]",
+  MEDIUM: "bg-[#9a7b4f]/10 border-l-[#9a7b4f] hover:bg-[#9a7b4f]/20 shadow-[0_0_10px_rgba(154,123,79,0.05)]",
+  LOW: "bg-blue-500/10 border-l-blue-500 hover:bg-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.05)]",
 };
 
 type Props = {
@@ -21,7 +21,6 @@ type TooltipState = {
   position: { x: number; y: number };
   side: "left" | "right";
 };
-
 
 export function AnnotationOverlay({ annotations, pageWidth }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState>({
@@ -36,25 +35,17 @@ export function AnnotationOverlay({ annotations, pageWidth }: Props) {
     setIsClient(true);
   }, []);
 
-  
   const handleMouseEnter = (ann: Annotation, element: HTMLDivElement) => {
     const rect = element.getBoundingClientRect();
-    const containerRect = containerRef.current?.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top;
+    const side = x > window.innerWidth / 2 ? "left" : "right";
     
-    if (containerRect) {
-      // Calculate position relative to the viewport
-      const x = rect.left + rect.width / 2;
-      const y = rect.top;
-      
-      // Determine which side to show tooltip
-      const side = x > window.innerWidth / 2 ? "left" : "right";
-      
-      setTooltip({
-        annotation: ann,
-        position: { x, y },
-        side,
-      });
-    }
+    setTooltip({
+      annotation: ann,
+      position: { x, y },
+      side,
+    });
   };
 
   const handleMouseLeave = () => {
@@ -63,19 +54,19 @@ export function AnnotationOverlay({ annotations, pageWidth }: Props) {
 
   return (
     <>
-      <div ref={containerRef} className="absolute inset-0 pointer-events-none">
+      <div ref={containerRef} className="absolute inset-0 pointer-events-none select-none">
         {annotations.map((ann) => (
           <div
             key={ann._id}
-            className={`absolute border-l-4 cursor-pointer pointer-events-auto 
-                        transition-all duration-200 rounded-sm backdrop-blur-[1px]
+            className={`absolute border-l-2 cursor-pointer pointer-events-auto 
+                        transition-all duration-300 rounded-sm
                         ${RISK_COLORS[ann.riskLevel] || RISK_COLORS.MEDIUM}`}
             style={{
               left: `${Math.max(0, Math.min(95, ann.boundingBox.x))}%`,
               top: `${Math.max(0, Math.min(95, ann.boundingBox.y))}%`,
               width: `${Math.max(5, Math.min(90, ann.boundingBox.width))}%`,
-              height: `${Math.max(3, Math.min(30, ann.boundingBox.height))}%`,
-              minHeight: "1.5rem",
+              height: `${Math.max(2.5, Math.min(30, ann.boundingBox.height))}%`,
+              minHeight: "1.25rem",
             }}
             onMouseEnter={(e) => handleMouseEnter(ann, e.currentTarget)}
             onMouseLeave={handleMouseLeave}
@@ -85,12 +76,12 @@ export function AnnotationOverlay({ annotations, pageWidth }: Props) {
       
       {isClient && tooltip.annotation && createPortal(
         <div
-          className="fixed z-[9999] pointer-events-none"
+          className="fixed z-[9999] pointer-events-none animate-in fade-in zoom-in-95 duration-200"
           style={{
             left: tooltip.side === "left" 
-              ? Math.min(tooltip.position.x + 20, window.innerWidth - 340)
-              : Math.max(tooltip.position.x - 340, 10),
-            top: Math.min(tooltip.position.y - 10, window.innerHeight - 400),
+              ? Math.min(tooltip.position.x + 24, window.innerWidth - 380)
+              : Math.max(tooltip.position.x - 380, 20),
+            top: Math.min(tooltip.position.y - 12, window.innerHeight - 450),
           }}
         >
           <AnnotationTooltip 

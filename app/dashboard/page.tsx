@@ -11,23 +11,23 @@ const STATUS_CONFIG: Record<
 > = {
   uploading: {
     label: "Uploading",
-    color: "text-blue-300",
-    bg: "bg-blue-500/20 border-blue-500/30",
+    color: "text-blue-700",
+    bg: "bg-blue-50 border-blue-200",
   },
   processing: {
     label: "Analyzing",
-    color: "text-amber-300",
-    bg: "bg-amber-500/20 border-amber-500/30",
+    color: "text-amber-700",
+    bg: "bg-amber-50 border-amber-200",
   },
   ready: {
     label: "Ready",
-    color: "text-emerald-300",
-    bg: "bg-emerald-500/20 border-emerald-500/30",
+    color: "text-emerald-700",
+    bg: "bg-emerald-50 border-emerald-200",
   },
   error: {
     label: "Error",
-    color: "text-red-300",
-    bg: "bg-red-500/20 border-red-500/30",
+    color: "text-red-700",
+    bg: "bg-red-50 border-red-200",
   },
 };
 
@@ -35,53 +35,57 @@ export default function DashboardPage() {
   const documents = useQuery(api.documents.getByUser);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Documents</h1>
-        <p className="text-gray-500">
-          Upload a legal document to get started with AI-powered risk analysis.
+      <div className="flex flex-col gap-1">
+        <h1 className="text-4xl font-serif font-medium text-stone-950">Documents</h1>
+        <p className="text-stone-500 text-lg">
+          Upload and manage your legal documents.
         </p>
       </div>
 
-      {/* Uploader */}
-      <DocumentUploader />
+      {/* Uploader Section */}
+      <div className="p-8 bg-white rounded-3xl border border-stone-200 shadow-sm">
+        <DocumentUploader />
+      </div>
 
       {/* Document list */}
-      {documents === undefined ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="h-6 w-6 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin" />
-          <span className="ml-3 text-gray-400 text-sm">
-            Loading documents...
-          </span>
-        </div>
-      ) : documents.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-gray-600 text-sm">
-            No documents yet. Upload your first one above.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <span>Your Documents</span>
-            <span className="text-xs text-gray-500 font-normal">
-              ({documents.length})
+      <div className="space-y-6">
+        <h2 className="text-xl font-serif font-medium text-stone-950 flex items-center gap-3">
+          <span>Recent Documents</span>
+          {documents && documents.length > 0 && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 font-sans font-normal">
+              {documents.length}
             </span>
-          </h2>
+          )}
+        </h2>
 
-          <div className="grid gap-3">
+        {documents === undefined ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <div className="h-10 w-10 rounded-full border-3 border-stone-100 border-t-[#9a7b4f] animate-spin" />
+            <span className="text-stone-400 text-sm font-medium">
+              Retrieving your library...
+            </span>
+          </div>
+        ) : documents.length === 0 ? (
+          <div className="text-center py-32 rounded-3xl border-2 border-dashed border-stone-200 bg-stone-50/50">
+            <p className="text-stone-400 italic font-serif text-lg">
+              No documents found. Start by uploading a file above.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4">
             {documents.map((doc: any) => {
               const status = STATUS_CONFIG[doc.status] || STATUS_CONFIG.error;
               return (
                 <Link
                   key={doc._id}
                   href={`/document/${doc._id}`}
-                  className="group flex items-center justify-between p-5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 transition-all duration-200"
+                  className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 rounded-2xl border border-stone-200 bg-white hover:border-[#9a7b4f]/30 hover:shadow-lg hover:shadow-stone-200/40 transition-all duration-300"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-5">
                     {/* File icon */}
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/10 shrink-0">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-stone-50 border border-stone-100 group-hover:bg-[#fbf9f6] group-hover:border-[#9a7b4f]/20 transition-colors">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -90,7 +94,7 @@ export default function DashboardPage() {
                         strokeWidth="1.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="h-5 w-5 text-indigo-400"
+                        className="h-6 w-6 text-stone-400 group-hover:text-[#9a7b4f] transition-colors"
                       >
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
@@ -98,12 +102,12 @@ export default function DashboardPage() {
                     </div>
 
                     <div>
-                      <p className="font-medium text-white text-sm group-hover:text-indigo-300 transition-colors">
+                      <p className="font-serif font-medium text-stone-900 text-lg group-hover:text-stone-950 transition-colors">
                         {doc.fileName}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-stone-400 font-medium mt-0.5">
                         {new Date(doc.uploadedAt).toLocaleDateString("en-US", {
-                          month: "short",
+                          month: "long",
                           day: "numeric",
                           year: "numeric",
                           hour: "2-digit",
@@ -113,34 +117,33 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    {/* Status badge */}
+                  <div className="flex items-center gap-4 mt-4 sm:mt-0">
                     <span
-                      className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border ${status.bg} ${status.color}`}
+                      className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-lg border ${status.bg} ${status.color}`}
                     >
                       {status.label}
                     </span>
-
-                    {/* Arrow */}
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-stone-50 text-stone-300 group-hover:bg-[#9a7b4f] group-hover:text-white transition-all duration-300">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
                   </div>
                 </Link>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
