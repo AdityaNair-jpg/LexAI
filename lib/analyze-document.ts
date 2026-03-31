@@ -40,13 +40,13 @@ export async function analyzeClause(
   const apiKey = process.env.OPENAI_API_KEY;
   
   if (!apiKey) {
-    console.error("[OpenAI] No API key found. Set OPENAI_API_KEY in .env.local");
+    console.error("[Huggingface] No API key found. Set OPENAI_API_KEY in .env.local");
     return null;
   }
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      console.log(`[OpenAI] Calling API (attempt ${attempt + 1})...`);
+      console.log(`[Huggingface] Calling API (attempt ${attempt + 1})...`);
       
       const response = await fetch(
         "https://api.openai.com/v1/chat/completions",
@@ -96,18 +96,18 @@ ${clause.slice(0, 2000)}`
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[OpenAI] API error (${response.status}):`, errorText);
-        throw new Error(`OpenAI API error: ${response.status}`);
+        console.error(`[Huggingface] API error (${response.status}):`, errorText);
+        throw new Error(`Huggingface API error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("[OpenAI] Response received");
+      console.log("[Huggingface] Response received");
       
       const rawText = data.choices?.[0]?.message?.content || "";
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
       
       if (!jsonMatch) {
-        console.warn("[OpenAI] No JSON found in response:", rawText);
+        console.warn("[Huggingface] No JSON found in response:", rawText);
         return null;
       }
 
@@ -138,7 +138,7 @@ ${clause.slice(0, 2000)}`
       
       return parsed;
     } catch (error: any) {
-      console.error(`[OpenAI] Error (attempt ${attempt + 1}):`, error.message);
+      console.error(`[Huggingface] Error (attempt ${attempt + 1}):`, error.message);
 
       if (attempt < MAX_RETRIES - 1) {
         await sleep(RETRY_DELAY_MS);
