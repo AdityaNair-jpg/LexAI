@@ -11,7 +11,7 @@ import { useState, useRef } from "react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import type { Annotation } from "@/types";
 import Link from "next/link";
-import { Shield, FileText, Loader2, Scale, AlertCircle } from "lucide-react";
+import { Shield, FileText, Loader2, Scale, AlertCircle, Download } from "lucide-react";
 
 export default function DocumentPage() {
   const params = useParams();
@@ -99,6 +99,31 @@ export default function DocumentPage() {
     setIsChatOpen(true);
   };
 
+  const handleExportFindings = () => {
+    // Export the document and its annotated findings as JSON
+    const payload = {
+      document: {
+        id: document._id,
+        fileName: document.fileName,
+        uploadedAt: document.uploadedAt,
+        status: document.status,
+      },
+      annotations: typedAnnotations,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = (globalThis as any).document.createElement("a");
+    a.href = url;
+    const safeName = (document.fileName || "document").replace(/[^a-z0-9]/gi, "_");
+    a.download = `${safeName}_findings.json`;
+    (globalThis as any).document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    a.remove();
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col overflow-hidden">
       <Navbar />
@@ -132,7 +157,7 @@ export default function DocumentPage() {
         <div className="flex-1 overflow-y-auto p-8 scrollbar-thin bg-stone-100/50">
           <div className="max-w-4xl mx-auto">
             {/* Document Header Info */}
-            <div className="mb-8 flex items-end justify-between border-b border-stone-200 pb-6">
+        <div className="mb-8 flex items-end justify-between border-b border-stone-200 pb-6">
               <div className="space-y-1">
                 <div className="flex items-center gap-3 mb-1">
                   <div className="p-2 rounded-lg bg-[#9a7b4f]/10">
@@ -175,6 +200,13 @@ export default function DocumentPage() {
             onAskAI={handleAskAI}
           />
         </div>
+        <button
+          onClick={handleExportFindings}
+          className="ml-4 px-3 py-2 bg-stone-900 text-white text-xs font-bold rounded-xl border border-stone-600 hover:bg-stone-800"
+          title="Export findings as JSON"
+        >
+          <Download className="w-4 h-4 inline-block mr-1" /> Export Findings
+        </button>
       </div>
 
       {/* Interactive AI Counsel Sidebar */}

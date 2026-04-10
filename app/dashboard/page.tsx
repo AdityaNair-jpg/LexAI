@@ -3,6 +3,8 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { DocumentUploader } from "@/components/document-uploader";
+import { AnalyticsPanel } from "@/components/analytics-panel";
+import React, { useState } from "react";
 import Link from "next/link";
 
 const STATUS_CONFIG: Record<
@@ -33,6 +35,28 @@ const STATUS_CONFIG: Record<
 
 export default function DashboardPage() {
   const documents = useQuery(api.documents.getByUser);
+  const [query, setQuery] = useState("");
+
+  // Filtered documents based on search query
+  const filteredDocs = (documents ?? []).filter((d: any) =>
+    (d.fileName || "").toLowerCase().includes(query.toLowerCase())
+  );
+
+  // Simple analytics counts
+  const counts: { uploading: number; processing: number; ready: number; error: number } = {
+    uploading: 0,
+    processing: 0,
+    ready: 0,
+    error: 0,
+  };
+  if (documents) {
+    (documents as any[]).forEach((d: any) => {
+      const s = d?.status as string;
+      if (s && counts.hasOwnProperty(s)) {
+        counts[s as keyof typeof counts] = (counts[s as keyof typeof counts] ?? 0) + 1;
+      }
+    });
+  }
 
   return (
     <div className="space-y-12">
@@ -49,6 +73,20 @@ export default function DashboardPage() {
         <DocumentUploader />
       </div>
 
+      {/* Analytics panel */}
+      <AnalyticsPanel counts={counts} />
+
+      {/* Search bar */}
+      <div className="px-6 py-2 flex items-center gap-3">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search documents by name..."
+          className="flex-1 max-w-md rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9a7b4f]"
+        />
+      </div>
+
       {/* Document list */}
       <div className="space-y-6">
         <h2 className="text-xl font-serif font-medium text-stone-950 flex items-center gap-3">
@@ -61,11 +99,19 @@ export default function DashboardPage() {
         </h2>
 
         {documents === undefined ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <div className="h-10 w-10 rounded-full border-3 border-stone-100 border-t-[#9a7b4f] animate-spin" />
-            <span className="text-stone-400 text-sm font-medium">
-              Retrieving your library...
-            </span>
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-4 border border-stone-200 rounded-2xl animate-pulse bg-white" aria-label="loading-skeleton">
+                <div className="h-8 w-8 rounded-full bg-stone-100" />
+                <div className="flex-1 h-4 bg-stone-100 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : filteredDocs.length === 0 && documents.length > 0 ? (
+          <div className="text-center py-32 rounded-3xl border-2 border-dashed border-stone-200 bg-stone-50/50">
+            <p className="text-stone-400 italic font-serif text-lg">
+              No documents match your search.
+            </p>
           </div>
         ) : documents.length === 0 ? (
           <div className="text-center py-32 rounded-3xl border-2 border-dashed border-stone-200 bg-stone-50/50">
@@ -75,7 +121,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {documents.map((doc: any) => {
+            {filteredDocs.map((doc: any) => {
               const status = STATUS_CONFIG[doc.status] || STATUS_CONFIG.error;
               return (
                 <Link
@@ -123,6 +169,17 @@ export default function DashboardPage() {
                     >
                       {status.label}
                     </span>
+                    <button
+                      title="Share link"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const share = `${location.origin}/document/${doc._id}`;
+                        navigator.clipboard.writeText(share);
+                      }}
+                      className="px-2 py-1 text-[9px] font-bold border rounded border-stone-200 hover:bg-stone-100"
+                    >
+                      Share
+                    </button>
                     <div className="h-8 w-8 flex items-center justify-center rounded-full bg-stone-50 text-stone-300 group-hover:bg-[#9a7b4f] group-hover:text-white transition-all duration-300">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
