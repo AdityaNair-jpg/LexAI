@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { extractTextFromPDF, splitIntoClauses } from "@/lib/extract-text";
+import { extractTextWithCoordinates } from "@/lib/extract-text-coordinates";
 import { analyzeClause } from "@/lib/analyze-document";
 import { mapAnnotations } from "@/lib/map-annotations";
 
@@ -43,6 +44,9 @@ export async function POST(req: NextRequest) {
     // 2. Extract text from PDF
     console.log(`[API/analyze] Extracting text from buffer of size ${buffer.length}...`);
     let fullText = "";
+    let textItems: any[] = [];
+    let pageDimensions: any = new Map();
+    
     try {
       const result = await extractTextFromPDF(buffer);
       fullText = result.text;
@@ -50,6 +54,16 @@ export async function POST(req: NextRequest) {
     } catch (e: any) {
       console.error("[API/analyze] PDF-parse error:", e);
       return NextResponse.json({ error: `PDF extraction failed: ${e.message}` }, { status: 500 });
+    }
+
+    // 2b. Extract text with coordinates for accurate bounding boxes
+    try {
+      const coordResult = await extractTextWithCoordinates(buffer);
+      textItems = coordResult.textItems;
+      pageDimensions = coordResult.pageDimensions;
+      console.log(`[API/analyze] Extracted ${textItems.length} text items with coordinates`);
+    } catch (e: any) {
+      console.warn("[API/analyze] Coordinate extraction failed, using estimates:", e);
     }
 
     // 3. Split into clauses
@@ -80,7 +94,13 @@ export async function POST(req: NextRequest) {
 
     // 5. Map results
     console.log("[API/analyze] Mapping annotations...");
-    const annotations = mapAnnotations(clauses, results, fullText);
+    const annotations = mapAnnotations(
+      clauses, 
+      results, 
+      fullText, 
+      textItems.length > 0 ? textItems : undefined,
+      pageDimensions.size > 0 ? pageDimensions : undefined
+    );
     
     console.log(`[API/analyze] Successfully returning ${annotations.length} annotations`);
     return NextResponse.json({ annotations, documentId });

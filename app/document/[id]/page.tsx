@@ -3,19 +3,24 @@
 import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { PDFViewer } from "@/components/pdf-viewer";
+import { PdfCanvasViewer } from "@/components/pdf-canvas-viewer";
 import { RiskSidebar } from "@/components/risk-sidebar";
+import { ChatSidebar } from "@/components/chat-sidebar";
 import { Navbar } from "@/components/navbar";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import type { Annotation } from "@/types";
+import Link from "next/link";
+import { Shield, FileText, Loader2, Scale, AlertCircle, Download } from "lucide-react";
 
 export default function DocumentPage() {
   const params = useParams();
   const documentId = params.id as string;
-  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(
-    null
-  );
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatInitialMessage, setChatInitialMessage] = useState<string>("");
+  const [documentText, setDocumentText] = useState<string>("");
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const document = useQuery(api.documents.getById, {
     id: documentId as Id<"documents">,
@@ -26,13 +31,11 @@ export default function DocumentPage() {
 
   if (document === undefined || annotations === undefined) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f]">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-10 w-10 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin" />
-            <p className="text-gray-400 text-sm">Loading document...</p>
-          </div>
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)]">
+          <Loader2 className="h-10 w-10 text-[#9a7b4f] animate-spin" />
+          <p className="text-stone-400 text-sm font-medium mt-4">Retrieving analyze results...</p>
         </div>
       </div>
     );
@@ -40,17 +43,18 @@ export default function DocumentPage() {
 
   if (!document) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f]">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <div className="text-5xl mb-4">📄</div>
-            <p className="text-white font-semibold text-lg mb-2">
-              Document Not Found
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)]">
+          <div className="text-center space-y-4">
+            <div className="text-6xl text-stone-200">🔍</div>
+            <h2 className="text-stone-900 font-serif text-2xl font-medium">Document Not Found</h2>
+            <p className="text-stone-500 max-w-sm mx-auto">
+              This record may have been archived or removed from our secure repository.
             </p>
-            <p className="text-gray-500 text-sm">
-              This document may have been deleted or you don&apos;t have access.
-            </p>
+            <Link href="/dashboard" className="inline-block mt-4 text-[#9a7b4f] hover:underline font-medium">
+              Return to Dashboard
+            </Link>
           </div>
         </div>
       </div>
@@ -67,88 +71,155 @@ export default function DocumentPage() {
       riskLevel: ann.riskLevel,
       explanation: ann.explanation,
       recommendation: ann.recommendation,
+      category: ann.category,
+      proposedSolution: ann.proposedSolution,
+      replacementClause: ann.replacementClause,
       boundingBox: ann.boundingBox,
     })
   );
 
+  const handleViewSolution = (annotation: Annotation) => {
+    setActiveAnnotationId(annotation._id);
+    
+    setTimeout(() => {
+      const element = window.document.getElementById(`annotation-${annotation._id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.classList.add("ring-2", "ring-[#9a7b4f]");
+        setTimeout(() => {
+          element.classList.remove("ring-2", "ring-[#9a7b4f]");
+        }, 2000);
+      }
+    }, 100);
+  };
+
+  const handleAskAI = (annotation: Annotation) => {
+    const message = `Explain the risks of this ${annotation.category || annotation.riskType} clause and how the proposed solution protects me. The clause states: "${annotation.text.slice(0, 200)}..."`;
+    setChatInitialMessage(message);
+    setIsChatOpen(true);
+  };
+
+  const handleExportFindings = () => {
+    // Export the document and its annotated findings as JSON
+    const payload = {
+      document: {
+        id: document._id,
+        fileName: document.fileName,
+        uploadedAt: document.uploadedAt,
+        status: document.status,
+      },
+      annotations: typedAnnotations,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = (globalThis as any).document.createElement("a");
+    a.href = url;
+    const safeName = (document.fileName || "document").replace(/[^a-z0-9]/gi, "_");
+    a.download = `${safeName}_findings.json`;
+    (globalThis as any).document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    a.remove();
+  };
+
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-stone-50 flex flex-col overflow-hidden">
       <Navbar />
 
-      {/* Processing state */}
+      {/* Processing state banner */}
       {document.status === "processing" && (
-        <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border-b border-indigo-500/20">
-          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
-            <div className="h-4 w-4 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
-            <p className="text-sm text-indigo-300">
-              LexAI is waking up and analyzing your document. This may take ~30
-              seconds...
+        <div className="bg-[#9a7b4f]/5 border-b border-[#9a7b4f]/20">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-center gap-3">
+            <Loader2 className="h-4 w-4 text-[#9a7b4f] animate-spin" />
+            <p className="text-sm font-medium text-stone-700">
+              Auditing legal content...
             </p>
           </div>
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error state banner */}
       {document.status === "error" && (
-        <div className="bg-red-500/10 border-b border-red-500/20">
-          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
-            <span className="text-red-400">⚠️</span>
-            <p className="text-sm text-red-300">
-              Analysis failed. Please try re-uploading the document.
+        <div className="bg-red-50 border-b border-red-100">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-center gap-3">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <p className="text-sm font-medium text-red-700">
+              Unable to complete automated analysis.
             </p>
           </div>
         </div>
       )}
 
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* PDF Viewer */}
-        <div className="flex-1 overflow-y-auto p-8 scrollbar-thin">
-          {/* Document header */}
-          <div className="mb-6">
-            <h1 className="text-xl font-bold text-white flex items-center gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5 text-indigo-400"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-              {document.fileName}
-            </h1>
-            <p className="text-xs text-gray-500 mt-1">
-              Uploaded{" "}
-              {new Date(document.uploadedAt).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
+      <div className="flex h-[calc(100vh-4rem)] flex-1">
+        {/* PDF Viewer Area */}
+        <div className="flex-1 overflow-y-auto p-8 scrollbar-thin bg-stone-100/50">
+          <div className="max-w-4xl mx-auto">
+            {/* Document Header Info */}
+        <div className="mb-8 flex items-end justify-between border-b border-stone-200 pb-6">
+              <div className="space-y-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="p-2 rounded-lg bg-[#9a7b4f]/10">
+                    <Scale className="h-4 w-4 text-[#9a7b4f]" />
+                  </div>
+                  <h1 className="text-2xl font-serif font-medium text-stone-900 tracking-tight">
+                    {document.fileName}
+                  </h1>
+                </div>
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest pl-11">
+                  Vault record • {new Date(document.uploadedAt).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
 
-          <PDFViewer fileUrl={document.fileUrl} annotations={typedAnnotations} />
+            <div className="bg-white rounded-3xl shadow-2xl shadow-stone-300/40 p-4 border border-stone-200">
+              <PdfCanvasViewer 
+                fileUrl={document.fileUrl} 
+                annotations={typedAnnotations}
+                onViewSolution={handleViewSolution}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Risk Sidebar */}
-        <div className="w-80 border-l border-white/[0.06] bg-[#0f0f18] overflow-hidden shrink-0">
+        {/* Audit Sidebar */}
+        <div ref={sidebarRef} className="w-100 border-l border-stone-200 bg-white overflow-hidden shrink-0 shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
           <RiskSidebar
             annotations={typedAnnotations}
             activeAnnotationId={activeAnnotationId}
-            onAnnotationClick={(id) =>
+            onAnnotationClick={(id: string) =>
               setActiveAnnotationId(
                 activeAnnotationId === id ? null : id
               )
             }
+            onAskAI={handleAskAI}
           />
         </div>
+        <button
+          onClick={handleExportFindings}
+          className="ml-4 px-3 py-2 bg-stone-900 text-white text-xs font-bold rounded-xl border border-stone-600 hover:bg-stone-800"
+          title="Export findings as JSON"
+        >
+          <Download className="w-4 h-4 inline-block mr-1" /> Export Findings
+        </button>
       </div>
+
+      {/* Interactive AI Counsel Sidebar */}
+      <ChatSidebar
+        isOpen={isChatOpen}
+        onClose={() => {
+          setIsChatOpen(false);
+          setChatInitialMessage("");
+        }}
+        documentText={documentText}
+        annotations={typedAnnotations}
+        initialMessage={chatInitialMessage}
+      />
     </div>
   );
 }

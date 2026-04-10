@@ -1,8 +1,9 @@
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 
-const doc = new PDFDocument();
-doc.pipe(fs.createWriteStream('Mock_Legal_Contract.pdf'));
+const doc = new PDFDocument({ pdfVersion: '1.3', compress: false });
+const stream = fs.createWriteStream('Mock_Legal_Contract.pdf');
+doc.pipe(stream);
 
 doc.fontSize(20).text('SHAREHOLDER RIGHTS AND CORPORATE GOVERNANCE AGREEMENT', { align: 'center' });
 doc.moveDown();
@@ -29,4 +30,7 @@ doc.moveDown();
 doc.text('IN WITNESS WHEREOF, the parties hereto have executed this Agreement.');
 
 doc.end();
-console.log('Mock legal PDF generated successfully.');
+
+stream.on('finish', () => {
+  console.log('Mock legal PDF generated successfully and closed correctly.');
+});

@@ -16,6 +16,9 @@ export const createMany = mutation({
         ),
         explanation: v.string(),
         recommendation: v.string(),
+        category: v.optional(v.string()),
+        proposedSolution: v.optional(v.string()),
+        replacementClause: v.optional(v.string()),
         boundingBox: v.object({
           x: v.number(),
           y: v.number(),
