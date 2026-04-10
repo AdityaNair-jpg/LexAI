@@ -1,13 +1,46 @@
 "use client";
+import React from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
-import { Scale } from "lucide-react";
+import { Scale, Sun, Moon } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
   const { isSignedIn, isLoaded } = useUser();
+
+  // Theme state (dark mode) with persistence
+  const [isDark, setIsDark] = React.useState(false);
+
+  // Initialize theme based on localStorage or prefers-color-scheme
+  React.useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("lexai-theme") : null;
+    if (saved === "dark") {
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
+    } else if (saved === "light") {
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
+    } else {
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setIsDark(prefersDark);
+      if (prefersDark) document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("lexai-theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("lexai-theme", "light");
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-stone-200/50 bg-white/70 backdrop-blur-xl">
@@ -60,6 +93,18 @@ export function Navbar() {
               >
                 Get Started
               </Link>
+              {/* Theme toggle button */}
+              <button
+                aria-label="Toggle dark mode"
+                onClick={toggleTheme}
+                className="p-2 rounded-full border border-stone-200 hover:bg-stone-100 transition-colors ml-2"
+              >
+                {isDark ? (
+                  <Sun className="w-5 h-5 text-stone-700" />
+                ) : (
+                  <Moon className="w-5 h-5 text-stone-700" />
+                )}
+              </button>
             </>
           ) : null}
         </div>
