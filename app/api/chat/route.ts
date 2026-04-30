@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { streamText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 export const maxDuration = 60;
 
@@ -53,8 +53,16 @@ When answering questions:
 
 Current date: ${new Date().toLocaleDateString()}`;
 
+    const apiKey = process.env.HF_API_TOKEN;
+    const google = createGoogleGenerativeAI({
+      apiKey: apiKey,
+    });
+    const model = google("gemini-3-flash-preview");
+
+    console.log("[Huggingface/Chat] Calling API...");
+
     const result = streamText({
-      model: openai("gpt-4o-mini"),
+      model: model,
       messages: [
         { role: "system", content: systemPrompt },
         ...messages,
@@ -64,10 +72,12 @@ Current date: ${new Date().toLocaleDateString()}`;
 
     return result.toTextStreamResponse();
   } catch (error) {
-    console.error("[API/chat] Error:", error);
+    console.error("[Huggingface/Chat] Error:", error);
     return Response.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
+
+

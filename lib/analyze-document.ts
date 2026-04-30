@@ -1,3 +1,6 @@
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateText } from "ai";
+
 type HFResponse = {
   riskType: string;
   riskLevel: "HIGH" | "MEDIUM" | "LOW";
@@ -37,35 +40,27 @@ const CATEGORIES = [
 export async function analyzeClause(
   clause: string
 ): Promise<HFResponse | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.HF_API_TOKEN;
   
   if (!apiKey) {
-    console.error("[Huggingface] No API key found. Set OPENAI_API_KEY in .env.local");
+    console.error("[Huggingface] No API key found. Set HF_API_TOKEN in .env.local");
     return null;
   }
+
+  const google = createGoogleGenerativeAI({
+    apiKey: apiKey,
+  });
+
+  const model = google("gemini-3-flash-preview");
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
       console.log(`[Huggingface] Calling API (attempt ${attempt + 1})...`);
       
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content: "You are LexAI, a Senior Corporate Legal Risk Advisor specializing in contract analysis. For each risky clause, you must provide not just identification but actionable PRESCRIPTIVE solutions."
-              },
-              {
-                role: "user",
-                content: `Analyze the following contract clause for legal risks and provide PRESCRIPTIVE solutions.
+      const { text } = await generateText({
+        model: model,
+        system: "You are LexAI, a Senior Corporate Legal Risk Advisor specializing in contract analysis. For each risky clause, you must provide not just identification but actionable PRESCRIPTIVE solutions.",
+        prompt: `Analyze the following contract clause for legal risks and provide PRESCRIPTIVE solutions.
 
 First, identify the clause category from this list: ${CATEGORIES}
 
@@ -84,37 +79,23 @@ Return ONLY a valid JSON object with these exact fields:
 Be strict with flagging. For every risky clause, provide a concrete proposed solution and, where possible, replacement clause text.
 
 CLAUSE:
-${clause.slice(0, 2000)}`
-              }
-            ],
-            temperature: 0.2,
-            max_tokens: 800,
-            response_format: { type: "json_object" }
-          }),
-        }
-      );
+${clause.slice(0, 2000)}`,
+        temperature: 0.2,
+      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Huggingface] API error (${response.status}):`, errorText);
-        throw new Error(`Huggingface API error: ${response.status}`);
-      }
-
-      const data = await response.json();
       console.log("[Huggingface] Response received");
       
-      const rawText = data.choices?.[0]?.message?.content || "";
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
       
       if (!jsonMatch) {
-        console.warn("[Huggingface] No JSON found in response:", rawText);
+        console.warn("[Huggingface] No JSON found in response:", text);
         return null;
       }
 
       const parsed = JSON.parse(jsonMatch[0]) as HFResponse;
       
       if (parsed.riskLevel) {
-        parsed.riskLevel = parsed.riskLevel.toUpperCase() as "HIGH" | "MEDIUM" | "LOW";
+        parsed.riskLevel = (parsed.riskLevel as string).toUpperCase() as "HIGH" | "MEDIUM" | "LOW";
         if (!["HIGH", "MEDIUM", "LOW"].includes(parsed.riskLevel)) {
           parsed.riskLevel = "MEDIUM";
         }
@@ -148,3 +129,5 @@ ${clause.slice(0, 2000)}`
 
   return null;
 }
+
+
